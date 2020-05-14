@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "ctfd.fullname" . }}
+  labels:
+    app: {{ template "ctfd.fullname" . }}
+    chart: {{ template "ctfd.chart" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "ctfd.fullname" . }}
+      release: "{{ .Release.Name }}"
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ template "ctfd.fullname" . }}
+        chart: {{ template "ctfd.chart" . }}
+        release: "{{ .Release.Name }}"
+      annotations:
+    spec:
+      volumes:
+        - name: {{ template "ctfd.fullname" . }}-uploads-volume
+          persistentVolumeClaim:
+            claimName: {{ template "ctfd.fullname" . }}-uploads-pvc
+      containers:
+      - name: ctfd
+        image: ctfd/ctfd:latest
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: UPLOAD_FOLDER
+            value: "/var/uploads"
+          - name: DATABASE_URL
+            value: mysql+pymysql://{{ .Values.mariadb.db.user }}:{{ .Values.mariadb.db.password }}@{{ template "ctfd.mariadb.fullname" . }}/{{ .Values.mariadb.db.name }}
+          - name: REDIS_URL
+            value: "redis://{{ template "ctfd.redis.fullname" . }}-master:6379"
+          - name: WORKERS
+            value: "1"
+          - name: LOG_FOLDER
+            value: "/var/log/CTFd"
+          - name: ACCESS_LOG
+            value: "-"
+          - name: ERROR_LOG
+            value: "-"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi

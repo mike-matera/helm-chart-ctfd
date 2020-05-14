@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "ctfd.fullname" . }}
+  labels:
+    app: {{ template "ctfd.fullname" . }}
+spec:
+  selector:
+    app: {{ template "ctfd.fullname" . }}
+    chart: {{ template "ctfd.chart" . }}
+    release: "{{ .Release.Name }}"
+  ports:
+    - port: 8000
+  type: LoadBalancer
